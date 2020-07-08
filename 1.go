@@ -14,16 +14,18 @@ var priorityMap = map[string]int{
 }
 
 func main() {
-	//var calcString string
-	//fmt.Scanln(&calcString)
-	calcString := "[1234]=[12]+[34]*{50},[12]=[1]+[2]/{2};[1]=10,[2]=20,[34]=50;[1234]"
+	var calcString string
+	fmt.Scanln(&calcString)
+	//calcString := "[1234]=[12]+[34]*{50},[12]=[1]+[2]/{2};[1]=10,[2]=20,[34]=50;[1234]"
+	//calcString := "[10001]=[1001]+[1002]-[1001];[1001]=10,[1002]=20;[10001]"
+	//calcString := "[10004]=[1001]/{10}+[1002]*{10};[1001]=10,[1002]=20;[10004]"
 	res, all := handleInputStr(calcString)
 	fmt.Println(calc(res, all))
 }
 
 func handleInputStr(inputStr string) (string, map[string]interface{}) {
-	inputStr = strings.ReplaceAll(inputStr, "[", "")
-	inputStr = strings.ReplaceAll(inputStr, "]", "")
+	inputStr = strings.Replace(inputStr, "[", "", -1)
+	inputStr = strings.Replace(inputStr, "]", "", -1)
 	inputList := strings.Split(inputStr, ";")
 	res := inputList[2]
 	var all = make(map[string]interface{})
@@ -50,7 +52,10 @@ func calc(res string, all map[string]interface{}) int {
 	numbers := []int{}
 	operators := []string{}
 	number := ""
-	valueStr, _ := all[res].(string)
+	valueStr, ok := all[res].(string)
+	if !ok {
+		return -1
+	}
 	for _, ch := range valueStr {
 		//0==>48,9==>57
 		if 48 <= ch && ch <= 57 {
@@ -61,11 +66,14 @@ func calc(res string, all map[string]interface{}) int {
 			number = ""
 		} else {
 			if _, ok := priorityMap[string(ch)]; ok {
-
-				numbers = append(numbers, calc(number, all))
-				number = ""
+				if number != "" {
+					numbers = append(numbers, calc(number, all))
+					number = ""
+				}
 				if len(operators) > 0 && priorityMap[string(ch)] <= priorityMap[operators[len(operators)-1]] {
 					tmpNumber := calcTwoNumber(numbers, operators)
+					numbers = numbers[:len(numbers)-2]
+					operators = operators[:len(operators)-1]
 					numbers = append(numbers, tmpNumber)
 				}
 				operators = append(operators, string(ch))
